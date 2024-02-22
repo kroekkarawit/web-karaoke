@@ -1,113 +1,153 @@
+"use client";
+import React from "react";
 import Image from "next/image";
+import Navbar from "../components/Navbar";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getCookie, setCookie } from "cookies-next";
 
-export default function Home() {
+const Home = () => {
+  const router = useRouter();
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAccessToken = async () => {
+      try {
+        const response = await fetch(`/api/user/new`, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+        });
+
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        } else {
+          const data: string = await response.json();
+          setAccessToken(data);
+          setCookie("access_token", data, { secure: true });
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    const accessToken = getCookie("access_token");
+    if (!accessToken) {
+      fetchAccessToken();
+    } else {
+      setAccessToken(accessToken);
+    }
+  }, []);
+
+  const handleCreateRoom = async () => {
+    try {
+      const response = await fetch(`/api/room/new`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        body: JSON.stringify({ accessToken }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      } else {
+        const data: any = await response.json();
+        router.push(`/room/${data.code}`);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const [showMainButton, setMainButton] = useState<boolean>(true);
+  const [showRoomInput, setShowRoomInput] = useState<boolean>(false);
+  const [roomId, setRoomId] = useState<string>("");
+  const toggleEnterRoom = () => {
+    setMainButton((showMainButton) => !showMainButton);
+    setShowRoomInput((showRoomInput) => !showRoomInput);
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <>
+      <Navbar />
+
+      <div className="flex flex-col items-center justify-center h-screen">
+        <div className="w-full md:flex hidden">
+          <Image
+            src="/assets/images/main-logo-full.png"
+            width="30000"
+            height="10000"
+            alt="main-logo"
+          />
         </div>
+        <div className="w-full md:hidden">
+          <Image
+            src="/assets/images/main-logo-mini.png"
+            width="30000"
+            height="10000"
+            alt="main-logo"
+          />
+        </div>
+        {showMainButton && (
+          <div className="flex w-full justify-center mt-16 flex-col md:flex-row text-center p-10 ">
+            <div
+              className="hover:cursor-pointer hover:text-slate-300 hover:shadow-lg rounded-full border-2 border-[#B7B1B1] bg-black text-white pr-4 pl-4 pt-2 pb-2 mr-0 md:mr-12 mb-8 md:mb-0"
+              onClick={handleCreateRoom}
+            >
+              สร้างห้อง
+            </div>
+            <div
+              className="hover:cursor-pointer hover:border-[#887e7e] hover:shadow-lg rounded-full border-2 border-[#B7B1B1] text-black pr-4 pl-4 pt-2 pb-2"
+              onClick={toggleEnterRoom}
+            >
+              เข้าห้อง
+            </div>
+          </div>
+        )}
+        {showRoomInput && (
+          <div className="flex flex-col justify-center mt-16 md:flex-row text-center p-10  ease-in duration-300">
+            <div className="flex flex-col mt-4 md:mt-0 md:mr-4">
+              <input
+                type="text"
+                onChange={(e) => setRoomId(e.target.value)}
+                className="rounded-full border-2 border-[#B7B1B1] px-2 py-2"
+              />
+            </div>
+            <div className="flex">
+              <div
+                className="hover:cursor-pointer hover:border-[#887e7e] hover:shadow-lg rounded-full border-2 border-[#B7B1B1] bg-black text-white pr-4 pl-4 pt-2 pb-2 mr-2"
+                onClick={() => router.push(`/room/${roomId}`)}
+              >
+                ไป
+              </div>
+              <div
+                className="hover:cursor-pointer  items-center hover:border-[#887e7e] hover:shadow-lg rounded-full border-2 border-[#B7B1B1]  text-white pr-4 pl-4 pt-2 pb-2"
+                onClick={toggleEnterRoom}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  version="1.1"
+                  id="Capa_1"
+                  x="0px"
+                  y="0px"
+                  viewBox="0 0 512.021 512.021"
+                  width="22"
+                  height="22"
+                  className="w-4 h-4 fill-black self-center mt-1"
+                >
+                  <g>
+                    <path d="M301.258,256.01L502.645,54.645c12.501-12.501,12.501-32.769,0-45.269c-12.501-12.501-32.769-12.501-45.269,0l0,0   L256.01,210.762L54.645,9.376c-12.501-12.501-32.769-12.501-45.269,0s-12.501,32.769,0,45.269L210.762,256.01L9.376,457.376   c-12.501,12.501-12.501,32.769,0,45.269s32.769,12.501,45.269,0L256.01,301.258l201.365,201.387   c12.501,12.501,32.769,12.501,45.269,0c12.501-12.501,12.501-32.769,0-45.269L301.258,256.01z" />
+                  </g>
+                </svg>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </>
   );
-}
+};
+
+export default Home;
